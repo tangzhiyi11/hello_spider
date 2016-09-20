@@ -73,5 +73,5 @@ class Douban(object):
 
 
 if __name__ == "__main__":
-    login = Douban('854742740@qq.com', 'tzy123456110')
+    login = Douban('', '')
     login.login_douban()
