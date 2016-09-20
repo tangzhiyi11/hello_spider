@@ -7,12 +7,9 @@ import cookielib
 import ConfigParser
 import os
 import sys
+import termcolor
 
 from bs4 import BeautifulSoup
-
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
 
 class Douban(object):
@@ -40,6 +37,7 @@ class Douban(object):
             'Accept-Encoding' : 'gzip, deflate, br',
         }
         self.session = requests.Session()
+        self.session.cookies = cookielib.LWPCookieJar('cookies')
         self.response = self.session.get(self.login_url, cookies=self.jar, headers=self.headers, verify=False)
 
     def login_douban(self, redir=domain):
@@ -56,21 +54,21 @@ class Douban(object):
                 self.captcha_handle()
             else:
                 break
-        print self.response.status_code
-        print self.response.text
-        print self.response.cookies
+        self.session.cookies.save()
+        print 'login successful!'
 
     def captcha_handle(self):
         captcha_url = self.captcha['src']
         captcha_id = re.findall('id=(.+)&', captcha_url)[0]
-        img = requests.get(captcha_url, headers=headers, verify=False)
-        open('verity.gif', 'wb').write(img.content)
+        img = requests.get(captcha_url, headers=self.headers, verify=False)
+        with open('verify.gif', 'wb') as verify_file:
+            verify_file.write(img.content)
+            verify_file.flush()
         os.system('verify.gif')
         captcha_solution = raw_input('input captcha:')
         self.form['captcha-id'] = captcha_id
         self.form['captcha-solution'] = captcha_solution
-        print captcha_id
-        self.response = self.session.post(self.login_url, data=self.form, headers=headers, verify=False)
+        self.response = self.session.post(self.login_url, data=self.form, headers=self.headers, verify=False)
 
 
 
