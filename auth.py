@@ -10,90 +10,70 @@ import sys
 
 from bs4 import BeautifulSoup
 
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-headers = {
-    'User-Agent': "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0",
-    'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Host': "accounts.douban.com",
-    'Referer': "https://accounts.douban.com/login?source=group",
-}
-session = requests.Session()
-session.cookies = cookielib.LWPCookieJar('cookies')
-try:
-    session.cookies.load(ignore_discard=True)
-except:
-    pass
+class Douban(object):
+    domain = 'https://www.douban.com/group/xiaotanzi/'
 
+    def __init__(self, account, password):
+        self.account = account
+        self.password = password
+        self.login_url = 'https://www.douban.com/accounts/login?source=group'
 
-# def is_login():
-#     # check session
-#     url = "https://www.zhihu.com/settings/profile"
-#     r = requests.get(url, allow_redirects=False, verify=False, headers=headers)
-#     status_code = int(r.status_code)
-#     if status_code == 301 or status_code == 302:
-#         return False
-#     elif status_code == 200:
-#         return True
-#     else:
-#         Logging.warn(u"网络故障")
-#         return None
+        self.jar = cookielib.LWPCookieJar('cookie')
+        self.form = {
+            'form_email' : self.account,
+            'form_password' : self.password,
+            'source' : 'group',
+            #'remember' : 'on',
+            'login' : '登录',
+        }
+        self.headers = {
+            'User-Agent': "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0",
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Host': "www.douban.com",
+            'Referer': "https://www.douban.com/group/explore",
+            'Accept-Language': 'zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3',
+            'Accept-Encoding' : 'gzip, deflate, br',
+        }
+        self.session = requests.Session()
+        self.response = self.session.get(self.login_url, cookies=self.jar, headers=self.headers, verify=False)
 
+    def login_douban(self, redir=domain):
 
-def read_account_from_config_file(config_file="config.ini"):
-    conf = ConfigParser.ConfigParser()
-    conf.read(config_file)
-    if conf.has_section('info'):
-        account = conf.get('info', 'email')
-        password = conf.get('info', 'password')
-        return (account, password)
-    else:
-        print "解析配置文件失败!"
-        return (None, None)
+        self.form['redir'] = redir
+        self.response = self.session.post(self.login_url, data=self.form, headers=self.headers)
+        print 'Posted form...'
 
+        #handle captcha code
+        while True:
+            soup = BeautifulSoup(self.response.text)
+            self.captcha = soup.find('img', attrs={'id':'captcha_image'})
+            if self.captcha:
+                self.captcha_handle()
+            else:
+                break
+        print self.response.status_code
+        print self.response.text
+        print self.response.cookies
 
-def login(account=None, password=None):
-    (account, password) = read_account_from_config_file()
-    if account == None or password == None:
-        print "输入用户名和密码！"
-        return
-    form = {}
-    form['form_email'] = account
-    form['password'] = password
-    form['source'] = None
-    form['remember'] = 'on'
-    form['login'] = '登录'
-    url = 'https://accounts.douban.com/login'
-    result = session.post(url, data=form, headers=headers, verify=False)
-    print result.status_code
+    def captcha_handle(self):
+        captcha_url = self.captcha['src']
+        captcha_id = re.findall('id=(.+)&', captcha_url)[0]
+        img = requests.get(captcha_url, headers=headers, verify=False)
+        open('verity.gif', 'wb').write(img.content)
+        os.system('verify.gif')
+        captcha_solution = raw_input('input captcha:')
+        self.form['captcha-id'] = captcha_id
+        self.form['captcha-solution'] = captcha_solution
+        print captcha_id
+        self.response = self.session.post(self.login_url, data=self.form, headers=headers, verify=False)
 
-    while True:
-        soup = BeautifulSoup(result.text)
-        captcha = soup.find('img', attrs={'id': 'captcha_image'})
-        if captcha:
-            result = captcha_handle(form, soup, url)
-        else:
-            break
-
-
-def captcha_handle(form, soup, url):
-    captcha_url = soup.find('img', attrs={'id': 'captcha_image'})['src']
-    print captcha_url
-    img = requests.get(captcha_url, headers=headers, verify=False)
-    img_name = 'verify.gif'
-    open(img_name, "wb").write(img.content)
-    os.system('%s' % img_name)
-    captcha_id = soup.find('input', attrs={'id': 'captcha-id'})
-    captcha_soution = raw_input("input captcha:")
-    form['captcha-id'] = captcha_id
-    form['captcha-solution'] = captcha_soution
-    result = session.post(url, data=form,  verify=False)
-    print 'in captcha_handle'
-    print result.status_code
-    return result
 
 
 if __name__ == "__main__":
-    login()
+    login = Douban('854742740@qq.com', 'tzy123456110')
+    login.login_douban()
