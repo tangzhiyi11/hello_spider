@@ -8,8 +8,12 @@ import ConfigParser
 import os
 import sys
 import termcolor
+import ConfigParser
 
 from bs4 import BeautifulSoup
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 
 class Douban(object):
@@ -55,6 +59,8 @@ class Douban(object):
             else:
                 break
         self.session.cookies.save()
+        #write response into file , just for test
+        self.test_result()
         print 'login successful!'
 
     def captcha_handle(self):
@@ -70,8 +76,28 @@ class Douban(object):
         self.form['captcha-solution'] = captcha_solution
         self.response = self.session.post(self.login_url, data=self.form, headers=self.headers, verify=False)
 
+    @staticmethod
+    def parse_conf(conf_file='config.ini'):
+        conf = ConfigParser.ConfigParser()
+        conf.read(conf_file)
+        if conf.has_section('info'):
+            account = conf.get('info', 'email')
+            password = conf.get('info', 'password')
+            return (account, password)
+        else:
+            return (None, None)
+
+    def test_result(self):
+        with open('result.txt', 'w') as result_file:
+            result_file.write(self.response.text)
 
 
 if __name__ == "__main__":
-    login = Douban('', '')
-    login.login_douban()
+    (account, password) = Douban.parse_conf()
+    if account and password:
+        login = Douban(account, password)
+        login.login_douban()
+    else:
+        print account
+        print password
+        print 'input user info!'
