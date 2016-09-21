@@ -107,7 +107,11 @@ class Auth(object):
             print 'not login!'
             return None
 
+    def url_get(self, url):
+        return self.session.get(url, headers=self.headers, verify=False)
 
+    def url_post(self, url, form):
+        return  self.session.post(url, data=form, headers=self.headers, verify=False)
 
 if __name__ == "__main__":
     (account, password) = Auth.parse_conf()
@@ -115,6 +119,8 @@ if __name__ == "__main__":
         login = Auth(account, password)
         login.login_douban()
         login.is_login()
+        result = login.url_get('https://www.douban.com/group/549574/')
+        login.test_result(result)
     else:
         print account
         print password
