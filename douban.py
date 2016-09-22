@@ -81,8 +81,8 @@ class Post:
                 'post_title' : post_title,
                 'post_author_name' : post_author_name,
                 'post_author_uid' : post_author_uid,
-                'post_timestamp' : post_timestamp,
-                'post_content' : post_content
+                'post_timestamp' : post_timestamp
+                #'post_content' : post_content
             }
             return post_dict
         except:
