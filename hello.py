@@ -35,9 +35,9 @@ class douban_spider:
     def do_spider(self):
         self.parse_config()
         self.gen_urls()
-        print self.urls
+        #print self.urls
         self.parse_urls()
-        print self.post_result
+        #print self.post_result
 
     def parse_config(self, file_name='url_params.conf'):
         conf = ConfigParser.ConfigParser()
@@ -71,11 +71,11 @@ class douban_spider:
             title_td = tr.find('td', attrs={'class' : 'title'})
             url = title_td.find('a')['href']
             post_id = self.get_post_id_from_url(url)
-            print post_id
+            #print post_id
             #get latest time
             time_td = tr.find('td', attrs={'class' : 'time'})
             latest_time = self.get_timestamp(time_td.text)
-            print latest_time
+            #print latest_time
             result_urls.append((post_id, latest_time))
         return result_urls
 
@@ -97,7 +97,7 @@ def get_html_increase(url_list):
     result = []
     for url in url_list:
         i = 0
-        while i <= 100:
+        while i <= 359050:
             this_url = url + str(i)
             i += 25
             result.append(this_url)
