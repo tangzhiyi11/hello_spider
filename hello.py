@@ -51,6 +51,7 @@ class douban_spider:
 
     def parse_urls(self):
         for url in self.urls:
+            time.sleep(6)
             self.parse_url(url)
 
     def parse_url(self, url):
