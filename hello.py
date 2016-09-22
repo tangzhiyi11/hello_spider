@@ -59,6 +59,19 @@ class douban_spider:
             print 'parse_url %s failed! status_code: %s' % (url, html.status_code)
         result = self.get_urls_from_html(html.text)
         self.post_result.extend(result)
+        post = Post()
+        for item in self.post_result:
+            post_id = item[0]
+            latest_timestamp = item[1]
+            result_post = post.parse_post(post_id)
+            if not result_post:
+                print "parse failed!"
+                print post_id
+                print latest_timestamp
+                continue
+            post.save_post_into_db(result_post, latest_timestamp)
+            time.sleep(5)
+        self.post_result= []
 
     def get_urls_from_html(self, html):
         soup = BeautifulSoup(html)
@@ -107,15 +120,4 @@ def get_html_increase(url_list):
 if __name__ == '__main__':
     spider = douban_spider(get_html_increase)
     spider.do_spider()
-    post = Post()
-    for item in spider.post_result:
-        post_id = item[0]
-        latest_timestamp = item[1]
-        result = post.parse_post(post_id)
-        if not result:
-            print "parse failed!"
-            print post_id
-            print latest_timestamp
-            continue
-        post.save_post_into_db(result, latest_timestamp)
-        time.sleep(5)
+
