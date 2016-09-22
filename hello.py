@@ -15,102 +15,93 @@ sys.setdefaultencoding('utf-8')
 urls = []
 result_list = []
 
-def parse_config(file_name):
-    conf = ConfigParser.ConfigParser()
-    with open(file_name) as input_file:
-        conf.readfp(input_file)
-        for section in conf.sections():
-            url_dict = {}
-            url_dict['url'] = conf.get(section, 'url')
-            url_dict['host'] = conf.get(section, 'host')
-            url_dict['accept'] = conf.get(section, 'accept')
-            url_dict['user_agent'] = conf.get(section, 'user_agent')
-            url_dict['name'] = section
-            urls.append(url_dict)
+headers = {
+    'User-Agent': "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0",
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Host': "www.douban.com",
+    'Accept-Language': 'zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3',
+    'Accept-Encoding': 'gzip, deflate, br',
+}
+
+class douban_spider:
+
+    def __init__(self, fun):
+        self.urls = []
+        self.url_seed = []
+        self.url_gen_fun = fun
+        self.url_result = []
+
+    def do_spider(self):
+        self.parse_config()
+        self.gen_urls()
+        print self.urls
+        #self.parse_urls()
+
+    def parse_config(self, file_name='url_params.conf'):
+        conf = ConfigParser.ConfigParser()
+        with open(file_name) as input_file:
+            conf.readfp(input_file)
+            for section in conf.sections():
+                self.url_seed.append(conf.get(section, 'url'))
+
+    def gen_urls(self):
+        self.urls = self.url_gen_fun(self.url_seed)
+
+    def parse_urls(self):
+        for url in self.urls:
+            self.parse_url(url)
+
+    def parse_url(self, url):
+        html = requests.get(url, headers=headers, verify=False)
+        if int(html.status_code) != 200:
+            print 'parse_url %s failed! status_code: %s' % (url, html.status_code)
+        result = self.get_urls_from_html(html)
+        self.url_result.extend(result)
+
+    def get_urls_from_html(self, html):
+        soup = BeautifulSoup(html)
+        tr_list = soup.find_all('tr',attrs={'class':''})
+        result_urls = []
+        for tr in tr_list:
+            if not tr.has_attr('class'):
+                continue
+            #get url
+            title_td = tr.find('td', attrs={'class' : 'title'})
+            url = title_td.find('a')['href']
+            post_id = self.get_post_id_from_url(url)
+            print post_id
+            #get latest time
+            time_td = tr.find('td', attrs={'class' : 'time'})
+            latest_time = self.get_timestamp(time_td.text)
+            print latest_time
+            result_urls.append((post_id, latest_time))
+        return result_urls
+
+    def get_timestamp(self, latest_time):
+        if re.match(r'^\d{2}.*', latest_time) == None:
+            time_array = time.strptime(latest_time, '%Y-%m-%d')
+        else:
+            time_array = time.strptime('2016-'+latest_time, '%Y-%m-%d %H:%M')
+        timestamp = int(time.mktime(time_array))
+        return timestamp
+
+    def get_post_id_from_url(slef, url):
+        if not url.endswith('/'):
+            url += '/'
+        return url.split('/')[-2]
 
 
-def get_html():
-    for url_dict in urls:
-        headers = {}
-        headers['Host'] = url_dict['host']
-        headers['Accept'] = url_dict['accept']
-        headers['User-Agent'] = url_dict['user_agent']
-        url = url_dict['url']
-        result = requests.get(url, headers=headers)
-        result = [result, url_dict['name']]
-        result_list.append(result)
-
-
-def get_html_increase():
-    for url_dict in urls:
-        headers = {}
-        headers['Host'] = url_dict['host']
-        headers['Accept'] = url_dict['accept']
-        headers['User-Agent'] = url_dict['user_agent']
-        url = url_dict['url']
+def get_html_increase(url_list):
+    result = []
+    for url in url_list:
         i = 0
-        while i < 500:
+        while i <= 100:
             this_url = url + str(i)
-            result = requests.get(url, headers=headers)
-            if result.status_code == 200:
-                get_urls_from_html(result.text)
-            else:
-                print "failed!"
             i += 25
+            result.append(this_url)
+    return result
 
-
-def get_topic_id_from_url(url):
-    if not url.endswith('/'):
-        url += '/'
-    return url.split('/')[-2]
-
-
-def get_timestamp(latest_time):
-    if re.match(r'^\d{2}.*', latest_time) == None:
-        time_array = time.strptime(latest_time, '%Y-%m-%d')
-    else:
-        time_array = time.strptime('2016-'+latest_time, '%Y-%m-%d %H:%M')
-    timestamp = int(time.mktime(time_array))
-    return timestamp
-
-
-def get_urls_from_html(html):
-    soup = BeautifulSoup(html)
-    tr_list = soup.find_all('tr',attrs={'class':''})
-
-    for tr in tr_list:
-        if not tr.has_attr('class'):
-            continue
-        #get url
-        title_td = tr.find('td', attrs={'class' : 'title'})
-        url = title_td.find('a')['href']
-        topic_id = get_topic_id_from_url(url)
-        print topic_id
-        #get latest time
-        time_td = tr.find('td', attrs={'class' : 'time'})
-        latest_time = get_timestamp(time_td.text)
-        print latest_time
-
-
-def run():
-    args_parser = argparse.ArgumentParser()
-    args_parser.add_argument('url_conf', help='input url config file')
-    args = args_parser.parse_args()
-    parse_config(args.url_conf)
-    get_html_increase()
-    # for result in result_list:
-    #     if result[0].status_code == 200:
-    #         text = result[0].text
-    #         print 'get %s html!' % result[1]
-    #         result_file_name = 'result_' + result[1] + '.txt'
-    #         result_file = open(result_file_name, 'w')
-    #         result_file.write(text)
-    #         result_file.close()
-    #         result_pickle_name = 'result_' + result[1] + '.pkl'
-    #         result_pickle = open(result_pickle_name, 'wb')
-    #         pickle.dump(text, result_pickle)
-    #         result_pickle.close()
-    #         get_urls_from_html(text)
 
 if __name__ == '__main__':
-    run()
+    spider = douban_spider(get_html_increase)
+    spider.do_spider()
