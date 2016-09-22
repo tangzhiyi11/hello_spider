@@ -44,7 +44,11 @@ class Post:
             else:
                 return response.text
         else:
-            response = requests.get(url, headers=headers, verify=False)
+            try:
+                response = requests.get(url, headers=headers, verify=False)
+            except:
+                print url
+                return None
             if int(response.status_code) != 200:
                 print 'get post html failed!'
                 return None
@@ -54,30 +58,37 @@ class Post:
     def parse_post(self, post_id):
         html = self.get_post_html(post_id)
         post = self.parse_post_html(html)
+        if not post:
+            return None
         post['post_id'] = post_id
         return post
 
     def parse_post_html(self, html):
-        soup = BeautifulSoup(html)
-        post_title = soup.find('title').text.strip()
-        topic_doc = soup.find('div', attrs={'class':'topic-doc'})
-        post_author_a = topic_doc.find('span', attrs={'class':'from'}).find('a')
-        post_author_name = post_author_a.text.strip()
-        post_author_uid = post_author_a['href'].split('/')[-2]
-        post_time = topic_doc.find('h3').find('span', attrs={'class':'color-green'}).text.strip()
-        time_array = time.strptime(post_time, '%Y-%m-%d %H:%M:%S')
-        post_timestamp = int(time.mktime(time_array))
-        post_content = topic_doc.find('div', attrs={'class':'topic-content'}).text
-        post_content = cgi.escape(post_content)
-        self.test_result(post_content)
-        post_dict = {
-            'post_title' : post_title,
-            'post_author_name' : post_author_name,
-            'post_author_uid' : post_author_uid,
-            'post_timestamp' : post_timestamp,
-            'post_content' : post_content
-        }
-        return post_dict
+        try:
+            soup = BeautifulSoup(html)
+            post_title = soup.find('title').text.strip()
+            topic_doc = soup.find('div', attrs={'class':'topic-doc'})
+            post_author_a = topic_doc.find('span', attrs={'class':'from'}).find('a')
+            post_author_name = post_author_a.text.strip()
+            post_author_uid = post_author_a['href'].split('/')[-2]
+            post_time = topic_doc.find('h3').find('span', attrs={'class':'color-green'}).text.strip()
+            time_array = time.strptime(post_time, '%Y-%m-%d %H:%M:%S')
+            post_timestamp = int(time.mktime(time_array))
+            post_content = topic_doc.find('div', attrs={'class':'topic-content'}).text
+            post_content = cgi.escape(post_content)
+            self.test_result(post_content)
+            post_dict = {
+                'post_title' : post_title,
+                'post_author_name' : post_author_name,
+                'post_author_uid' : post_author_uid,
+                'post_timestamp' : post_timestamp,
+                'post_content' : post_content
+            }
+            return post_dict
+        except:
+            self.test_result(html)
+            return None
+
 
     def save_post_into_db(self, post_dict, latest_timestamp):
         post_id = post_dict['post_id']
