@@ -7,6 +7,7 @@ import time
 import re
 
 from bs4 import BeautifulSoup
+from douban import Post
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -29,13 +30,14 @@ class douban_spider:
         self.urls = []
         self.url_seed = []
         self.url_gen_fun = fun
-        self.url_result = []
+        self.post_result = []
 
     def do_spider(self):
         self.parse_config()
         self.gen_urls()
         print self.urls
-        #self.parse_urls()
+        self.parse_urls()
+        print self.post_result
 
     def parse_config(self, file_name='url_params.conf'):
         conf = ConfigParser.ConfigParser()
@@ -55,8 +57,8 @@ class douban_spider:
         html = requests.get(url, headers=headers, verify=False)
         if int(html.status_code) != 200:
             print 'parse_url %s failed! status_code: %s' % (url, html.status_code)
-        result = self.get_urls_from_html(html)
-        self.url_result.extend(result)
+        result = self.get_urls_from_html(html.text)
+        self.post_result.extend(result)
 
     def get_urls_from_html(self, html):
         soup = BeautifulSoup(html)
@@ -105,3 +107,15 @@ def get_html_increase(url_list):
 if __name__ == '__main__':
     spider = douban_spider(get_html_increase)
     spider.do_spider()
+    post = Post()
+    for item in spider.post_result:
+        post_id = item[0]
+        latest_timestamp = item[1]
+        result = post.parse_post(post_id)
+        if not result:
+            print "parse failed!"
+            print post_id
+            print latest_timestamp
+            continue
+        post.save_post_into_db(result, latest_timestamp)
+        time.sleep(5)
