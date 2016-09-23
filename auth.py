@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 import requests
 import re
@@ -21,6 +21,7 @@ class Auth(object):
     domain = 'https://www.douban.com/'
 
     def __init__(self, account, password):
+        # type: (object, object) -> object
         self.account = account
         self.password = password
         self.login_url = 'https://www.douban.com/accounts/login?source=group'
@@ -43,7 +44,7 @@ class Auth(object):
         self.session = requests.Session()
         #self.response = self.session.get(self.login_url, cookies=self.session.cookies, headers=self.headers, verify=False)
 
-    def login_douban(self, redir=domain):
+    def login(self, redir=domain):
 
         self.form['redir'] = redir
         self.response = self.session.post(self.login_url, cookies=self.jar, data=self.form, headers=self.headers)
@@ -51,7 +52,7 @@ class Auth(object):
 
         #handle captcha code
         while True:
-            soup = BeautifulSoup(self.response.text)
+            soup = BeautifulSoup(self.response.text, "lxml")
             self.captcha = soup.find('img', attrs={'id':'captcha_image'})
             if self.captcha:
                 self.captcha_handle()
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     (account, password) = Auth.parse_conf()
     if account and password:
         login = Auth(account, password)
-        login.login_douban()
+        login.login()
         login.is_login()
         result = login.url_get('https://www.douban.com/group/549574/')
         login.test_result(result)

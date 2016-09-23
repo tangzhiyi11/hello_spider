@@ -65,7 +65,7 @@ class Post:
 
     def parse_post_html(self, html):
         try:
-            soup = BeautifulSoup(html)
+            soup = BeautifulSoup(html, "lxml")
             post_title = soup.find('title').text.strip()
             topic_doc = soup.find('div', attrs={'class':'topic-doc'})
             post_author_a = topic_doc.find('span', attrs={'class':'from'}).find('a')

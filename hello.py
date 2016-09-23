@@ -75,7 +75,7 @@ class douban_spider:
         self.post_result= []
 
     def get_urls_from_html(self, html):
-        soup = BeautifulSoup(html)
+        soup = BeautifulSoup(html, "lxml")
         tr_list = soup.find_all('tr',attrs={'class':''})
         result_urls = []
         for tr in tr_list:
