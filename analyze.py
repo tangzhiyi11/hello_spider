@@ -28,7 +28,8 @@ def analyze():
 
 
 def do_seg(text):
-    seg_list = jieba.lcut_for_search(text)
+    #seg_list = jieba.lcut_for_search(text)
+    jieba.analyse.set_stop_words('stop_word.txt')
     tags = jieba.analyse.extract_tags(text)
     return tags
 
