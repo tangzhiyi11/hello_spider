@@ -51,8 +51,8 @@ class douban_spider:
 
     def parse_urls(self):
         for url in self.urls:
-            time.sleep(10)
             self.parse_url(url)
+            time.sleep(10)
 
     def parse_url(self, url):
         html = requests.get(url, headers=headers, verify=False)
@@ -72,6 +72,7 @@ class douban_spider:
                     continue
                 post.save_post_into_db(result_post, latest_timestamp)
             except:
+                print "parse failed!"
                 pass
             time.sleep(3)
 
@@ -89,6 +90,7 @@ class douban_spider:
                 #print post_id
                 #get latest time
                 time_td = tr.find('td', attrs={'class' : 'time'})
+                #print time_td.text
                 latest_time = self.get_timestamp(time_td.text)
                 #print latest_time
                 yield (post_id, latest_time)
@@ -96,7 +98,7 @@ class douban_spider:
             pass
 
     def get_timestamp(self, latest_time):
-        if re.match(r'^\d{2}.*', latest_time) == None:
+        if re.match(r'^\d{4}.*', latest_time) != None:
             time_array = time.strptime(latest_time, '%Y-%m-%d')
         else:
             time_array = time.strptime('2016-'+latest_time, '%Y-%m-%d %H:%M')
@@ -111,7 +113,7 @@ class douban_spider:
 
 def get_html_increase(url_list):
     for url in url_list:
-        i = 0
+        i = 50000
         while i <= 359050:
             this_url = url + str(i)
             i += 25
