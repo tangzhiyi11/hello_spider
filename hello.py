@@ -17,7 +17,7 @@ urls = []
 result_list = []
 
 headers = {
-    'User-Agent': "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0",
+    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.11 (KHTML, like Gecko) Ubuntu/11.10 Chromium/27.0.1453.93 ",
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Host': "www.douban.com",
     'Accept-Language': 'zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3',
@@ -51,7 +51,7 @@ class douban_spider:
 
     def parse_urls(self):
         for url in self.urls:
-            time.sleep(6)
+            time.sleep(10)
             self.parse_url(url)
 
     def parse_url(self, url):
@@ -59,39 +59,41 @@ class douban_spider:
         if int(html.status_code) != 200:
             print 'parse_url %s failed! status_code: %s' % (url, html.status_code)
         result = self.get_urls_from_html(html.text)
-        self.post_result.extend(result)
         post = Post()
-        for item in self.post_result:
-            post_id = item[0]
-            latest_timestamp = item[1]
-            result_post = post.parse_post(post_id)
-            if not result_post:
-                print "parse failed!"
-                print post_id
-                print latest_timestamp
-                continue
-            post.save_post_into_db(result_post, latest_timestamp)
-            time.sleep(5)
-        self.post_result= []
+        for item in result:
+            try:
+                post_id = item[0]
+                latest_timestamp = item[1]
+                result_post = post.parse_post(post_id)
+                if not result_post:
+                    print "parse failed!"
+                    print post_id
+                    print latest_timestamp
+                    continue
+                post.save_post_into_db(result_post, latest_timestamp)
+            except:
+                pass
+            time.sleep(3)
 
     def get_urls_from_html(self, html):
-        soup = BeautifulSoup(html, "lxml")
-        tr_list = soup.find_all('tr',attrs={'class':''})
-        result_urls = []
-        for tr in tr_list:
-            if not tr.has_attr('class'):
-                continue
-            #get url
-            title_td = tr.find('td', attrs={'class' : 'title'})
-            url = title_td.find('a')['href']
-            post_id = self.get_post_id_from_url(url)
-            #print post_id
-            #get latest time
-            time_td = tr.find('td', attrs={'class' : 'time'})
-            latest_time = self.get_timestamp(time_td.text)
-            #print latest_time
-            result_urls.append((post_id, latest_time))
-        return result_urls
+        try:
+            soup = BeautifulSoup(html, "lxml")
+            tr_list = soup.find_all('tr',attrs={'class':''})
+            for tr in tr_list:
+                if not tr.has_attr('class'):
+                    continue
+                #get url
+                title_td = tr.find('td', attrs={'class' : 'title'})
+                url = title_td.find('a')['href']
+                post_id = self.get_post_id_from_url(url)
+                #print post_id
+                #get latest time
+                time_td = tr.find('td', attrs={'class' : 'time'})
+                latest_time = self.get_timestamp(time_td.text)
+                #print latest_time
+                yield (post_id, latest_time)
+        except:
+            pass
 
     def get_timestamp(self, latest_time):
         if re.match(r'^\d{2}.*', latest_time) == None:
@@ -108,14 +110,12 @@ class douban_spider:
 
 
 def get_html_increase(url_list):
-    result = []
     for url in url_list:
         i = 0
         while i <= 359050:
             this_url = url + str(i)
             i += 25
-            result.append(this_url)
-    return result
+            yield this_url
 
 
 if __name__ == '__main__':
