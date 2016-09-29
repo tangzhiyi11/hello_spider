@@ -52,7 +52,7 @@ class Master:
 
     def get_html_increase(self, url_list):
         for url in url_list:
-            i = 0
+            i = 50000
             while i <= 359050:
                 this_url = url + str(i)
                 i += 25
