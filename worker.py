@@ -22,7 +22,7 @@ headers = {
 }
 
 class Worker:
-    def __int__(self):
+    def __init__(self):
         self.context = zmq.Context()
         self.receiver = self.context.socket(zmq.PULL)
         self.receiver.connect("tcp://localhost:7777")
@@ -38,9 +38,11 @@ class Worker:
                 print "parse failed!"
                 print post_id
                 print post_latest_timestamp
+            else:
+                print result_post
         except:
             print "parse failed!"
-        time.sleep(3)
+        time.sleep(5)
 
     def parse_msg(self, msg):
         msg = msg.strip().split(' ')
