@@ -22,7 +22,7 @@ headers = {
 
 
 class Master:
-    def __int__(self):
+    def __init__(self):
         self.context = zmq.Context()
         self.sender = self.context.socket(zmq.PUSH)
         self.sender.bind('tcp://*:7777')
@@ -47,7 +47,8 @@ class Master:
                 post_id = post[0]
                 latest_time = str(post[1])
                 self.sender.send(post_id+' '+latest_time)
-                time.sleep(10)
+                print "processing %s" % post_id
+                time.sleep(4)
 
     def get_html_increase(self, url_list):
         for url in url_list:
