@@ -2,12 +2,9 @@
 import requests
 import zmq
 import sys
-import ConfigParser
-import re
 import time
+import json
 
-
-from bs4 import BeautifulSoup
 from douban import Post
 
 reload(sys)
@@ -26,6 +23,8 @@ class Worker:
         self.context = zmq.Context()
         self.receiver = self.context.socket(zmq.PULL)
         self.receiver.connect("tcp://localhost:7777")
+        self.sender = self.context.socket(zmq.PUSH)
+        self.sender.connect("tcp://localhost:7776")
         self.post = Post()
 
     def do_parse(self):
@@ -38,8 +37,9 @@ class Worker:
                 print "parse failed!"
                 print post_id
                 print post_latest_timestamp
-            else:
-                print result_post
+                result_post['post_latest_timestamp'] = post_latest_timestamp
+                result_json = json.dumps(result_post)
+                self.sender.send(result_json)
         except:
             print "parse failed!"
         time.sleep(5)
