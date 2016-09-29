@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 
 headers = {
-    'User-Agent': "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:48.0) Gecko/20100101 Firefox/48.0",
+    'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.11 (KHTML, like Gecko) Ubuntu/11.10 Chromium/27.0.1453.93 ",
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'Host': "www.douban.com",
     'Accept-Language': 'zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3',
@@ -57,6 +57,8 @@ class Post:
 
     def parse_post(self, post_id):
         html = self.get_post_html(post_id)
+        if not html:
+            return None
         post = self.parse_post_html(html)
         if not post:
             return None
@@ -64,6 +66,8 @@ class Post:
         return post
 
     def parse_post_html(self, html):
+        if not html:
+            return None
         try:
             soup = BeautifulSoup(html, "lxml")
             post_title = soup.find('title').text.strip()
