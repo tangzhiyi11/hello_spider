@@ -24,6 +24,7 @@ headers = {
     'Accept-Encoding': 'gzip, deflate, br',
 }
 
+
 class douban_spider:
 
     def __init__(self, fun):
@@ -35,9 +36,9 @@ class douban_spider:
     def do_spider(self):
         self.parse_config()
         self.gen_urls()
-        #print self.urls
+        # print self.urls
         self.parse_urls()
-        #print self.post_result
+        # print self.post_result
 
     def parse_config(self, file_name='url_params.conf'):
         conf = ConfigParser.ConfigParser()
@@ -79,17 +80,17 @@ class douban_spider:
     def get_urls_from_html(self, html):
         try:
             soup = BeautifulSoup(html, "lxml")
-            tr_list = soup.find_all('tr',attrs={'class':''})
+            tr_list = soup.find_all('tr', attrs={'class': ''})
             for tr in tr_list:
                 if not tr.has_attr('class'):
                     continue
                 #get url
-                title_td = tr.find('td', attrs={'class' : 'title'})
+                title_td = tr.find('td', attrs={'class': 'title'})
                 url = title_td.find('a')['href']
                 post_id = self.get_post_id_from_url(url)
                 #print post_id
                 #get latest time
-                time_td = tr.find('td', attrs={'class' : 'time'})
+                time_td = tr.find('td', attrs={'class': 'time'})
                 #print time_td.text
                 latest_time = self.get_timestamp(time_td.text)
                 #print latest_time
@@ -98,7 +99,7 @@ class douban_spider:
             pass
 
     def get_timestamp(self, latest_time):
-        if re.match(r'^\d{4}.*', latest_time) != None:
+        if re.match(r'^\d{4}.*', latest_time) is not None:
             time_array = time.strptime(latest_time, '%Y-%m-%d')
         else:
             time_array = time.strptime('2016-'+latest_time, '%Y-%m-%d %H:%M')
