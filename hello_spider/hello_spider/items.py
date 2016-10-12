@@ -8,7 +8,11 @@
 import scrapy
 
 
-class HelloSpiderItem(scrapy.Item):
+class PostItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    pass
+    post_id = scrapy.Field()
+    post_title = scrapy.Field()
+    post_author_name = scrapy.Field()
+    post_timestamp = scrapy.Field()
+    post_latest_timestamp = scrapy.Field()
