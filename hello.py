@@ -114,7 +114,7 @@ class douban_spider:
 
 def get_html_increase(url_list):
     for url in url_list:
-        i = 0
+        i = 200
         while i <= 359050:
             this_url = url + str(i)
             i += 25
